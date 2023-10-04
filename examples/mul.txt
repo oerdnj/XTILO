@@ -1,0 +1,160 @@
+; Binary multiplication machine - multiplies two numbers given in binary
+; Input: two numbers in binary, separated by a space, eg "101 1101"
+; Output: the product of the two inputs, in binary
+
+; The machine stores data on the tape in the configuration "tally num1 num2" where num1, num2 are the input and tally is the running total for the product.
+
+; Set up tally
+
+; OS: Put a single zero symbol two places left from the initial (zero) position
+; of the head; then change state '10'
+
+0 * * l 1
+1 _ _ l 2
+2 _ 0 r 3
+3 _ _ r 10
+
+;;;; Find end of num1 ;;;;
+
+; OS: We found blank or 'x' symbol, move left and change state to '11'
+10 _ _ l 11
+10 x x l 11
+; OS: Move right if the symbols are '1' or '0';
+10 0 0 r 10
+10 1 1 r 10
+
+;;;; OS: Branching on 0 vs 1 symbol ;;;;
+; If last digit of num1 is 0, multiply num2 by 2
+11 0 x r 20
+; If last digit of num1 is 1, add num2 to tally and then multiply num2 by 2
+11 1 x r 30
+; OS: Mark the digit as processed by writing 'x' symbol into its place
+
+;;;; Multiply num2 by 2 ;;;;
+
+; OS: Find start of num2
+20 _ _ r 20
+20 x x r 20
+20 * * r 21
+
+; OS: Write '0' at the end of num2 (e.g. num2 << 1)
+21 _ 0 l 25 ; Multiplication by 2 done, return to end of num1
+21 * * r 21 ; Move to the end of num2
+
+; OS: Move to the start of num2
+25 _ _ l 26
+25 * * l 25
+
+; OS: If there are two blanks, we are done
+; OS: Find last unprocessed digit from num1
+26 _ _ r 80 ; Finished multiplying. Clean up
+26 x x l 26
+26 * * * 10 ; OS deduplicate the original code:
+; 26 0 0 * 11
+; 26 1 1 * 11
+
+; Add num2 to tally
+; OS: Find start of num2
+30 _ _ r 30
+30 x x r 30
+30 * * r 31
+
+; OS: Move to the last digit of num2
+31 _ _ l 32
+31 * * r 31
+
+; OS: Find first unprocessed 0 or 1 symbol
+32 0 o l 40 ; Add a zero
+32 1 i l 50 ; Add a one
+32 o o l 32
+32 i i l 32
+32 _ _ r 70 ; Finished adding
+
+; Adding a 0 to tally
+; OS: Seek to tally by seeking over num2, num1 looking for blanks as separators
+40 _ _ l 41
+40 * * l 40 ; Found end of num2
+41 _ _ l 41
+41 * * l 42 ; Found start of num1
+42 _ _ l 43 ; Found end of num1
+42 * * l 42
+
+; OS: Find first unprocessed digit in tally
+43 o o l 43
+43 i i l 43
+; OS: Adding '0' to tally by just doing single 0->o, 1->i, blank->o transformation
+43 0 o r 44
+43 1 i r 44
+43 _ o r 44
+
+; OS: Move to the num2 again to process next digit from num2
+44 _ _ r 45 ; Found end of tally
+44 * * r 44
+45 _ _ r 45
+45 * * r 46 ; Found start of num1
+46 _ _ r 47 ; Found end of num1
+46 * * r 46
+47 _ _ r 47
+47 * * r 48
+48 _ _ l 32 ; Found end of num2
+48 * * r 48
+
+; Adding a 1 to tally
+; OS: Seek to tally by seeking over num2, num1 looking for blanks as separators
+50 _ _ l 51 ; Found end of num2
+50 * * l 50
+51 _ _ l 51
+51 * * l 52 ; Found start of num1
+52 _ _ l 53 ; Found end of num1
+52 * * l 52
+
+; OS: Seek to first unprocessed digit in the tally
+53 o o l 53
+53 i i l 53
+53 _ i r 55 ; OS: We removed this line for '0', but here the line is mandatory
+53 0 i r 55 ; return to num2 ; OS: 0+1 -> i; return to num2
+53 1 o l 54 ; OS: 1+1 -> o, carry over the '1'
+54 0 1 r 55 ; OS: carried over 1 + 0 -> 1, return to num2
+54 1 0 l 54 ; OS: carried over 1 + 1 -> 0, carry over the '1'
+54 _ 1 r 55 ; OS: carried over 1 + _ -> 1, return to num2
+
+55 _ _ r 56 ; Found end of tally
+55 * * r 55
+56 _ _ r 56
+56 * * r 57 ; Found start of num1
+57 _ _ r 58 ; Found end of num1
+57 * * r 57
+58 _ _ r 58
+58 * * r 59
+59 _ _ l 32 ; Found end of num2
+59 * * r 59
+
+; Finished adding, clean up
+; OS: Perform i->1, o->0 transformation on num2
+70 i 1 r 70
+70 o 0 r 70
+70 _ _ l 71
+71 _ _ l 72 ; Found end of num2
+71 * * l 71
+72 _ _ l 72
+72 * * l 73 ; Found start of num1
+73 _ _ l 74
+73 * * l 73
+; OS: Perform i->1, o->0 transformation on tally
+74 o 0 l 74
+74 i 1 l 74
+74 * * r 75 ; Finished cleaning up tally
+75 _ _ r 76
+75 * * r 75
+; OS: Now we can multiply num2 by 2 to process next digit
+76 _ _ r 20 ; Multiply num2 by 2
+76 * * r 76
+
+; Finished multiplying, clean up
+; OS: Keep only tally and replace num1 and num2 with blanks
+80 x _ r 80
+80 _ _ r 81
+81 _ _ l 82
+81 * _ r 81
+82 _ _ l 82
+82 * * * halt
