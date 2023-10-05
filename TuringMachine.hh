@@ -23,8 +23,6 @@ class TuringMachine
 	std::vector<char> tape_alphabet;
 	State *q_0;
 
-	State &getState(std::string name);
-
       public:
 	TuringMachine(std::string tape_, std::string filename);
 
@@ -34,6 +32,7 @@ class TuringMachine
 	void processTape(void);
 
       private:
+	State &getState(std::string name);
 	void adjustTape(size_t &idx);
 	void applyRule(size_t &idx, State &state, char &head_symbol,
 		       const Rule &rule, const State &next);
