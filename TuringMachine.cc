@@ -118,11 +118,12 @@ void TuringMachine::displayTape(State &state, size_t idx)
 void TuringMachine::displayStates()
 {
 	for (auto state_it : states) {
-		const State &state = state_it.second;
-		for (auto rule_it : state.transitions) {
-			const Rule &rule = rule_it.first;
+		State &state = state_it.second;
+		for (auto rule_it = state.begin(); rule_it != state.end();
+		     ++rule_it) {
+			const Rule &rule = rule_it->first;
 
-			const State &next = rule_it.second;
+			const State &next = rule_it->second;
 			std::cout << state.name << " " << rule.read_symbol
 				  << " " << rule.write_symbol << " "
 				  << rule.direction << " " << next.name << "\n";

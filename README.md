@@ -5,6 +5,9 @@ in both directions - if the current head position goes outside of the tape
 dimensions, the tape is expanded in that direction (in very inefficient manner
 though).
 
+The State class also implements Iterator pattern for the list of the
+States.
+
 ## Compile
 
 This projects uses Meson build system and is written in C++17 and can be built
